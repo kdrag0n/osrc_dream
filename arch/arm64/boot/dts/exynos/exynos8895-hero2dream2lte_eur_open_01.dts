@@ -1,0 +1,155 @@
+/*
+ * SAMSUNG EXYNOS8895 board device tree source
+ *
+ * Copyright (c) 2016 Samsung Electronics Co., Ltd.
+ *		http://www.samsung.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
+
+/dts-v1/;
+#include "exynos8895-dream2lte_common.dtsi"
+#include "exynos8895-dream2lte_motor.dtsi"
+#include "exynos8895-dream2lte_svcled.dtsi"
+#include "ccic-s2mm005_00.dtsi"
+#include "exynos8895-dreamlte_mst_00.dtsi"
+/ {
+	model = "Samsung DREAM2LTE w/ Hero2 Panel EUR rev00 board based on EXYNOS8895";
+	model_info-chip = <8895>;
+	model_info-platform = "android";
+	model_info-subtype = "samsung";
+	model_info-hw_rev = <1>;
+	model_info-hw_rev_end = <2>;
+	compatible = "samsung, DREAM2LTE w/ Hero2 Panel EUR rev00", "samsung,EXYNOS8895";
+
+	spi_10: spi@108C0000{
+		#address-cells = <1>;
+		#size-cells = <0>;
+	
+		pinctrl-names = "default";
+		pinctrl-0 = <&spi1_mosi_sck_ssn &spi1_miso>;
+
+		num-cs = <1>;
+		status = "okay";
+
+		BCM4773@0 {
+			compatible = "ssp,BCM4773";
+			reg = <0>;
+			spi-max-frequency = <26000000>;
+			spi-cpol;
+			spi-cpha;
+			pinctrl-names = "default";
+			pinctrl-0 = <&ssp_host_req &ssp_mcu_req &ssp_mcu_resp &ssp_batch_wake_irq>;
+		
+			gpio-controller;
+			#gpio-cells = <2>;
+			ssp-host-req = <&gpa3 4 0x00>;
+			ssp-mcu-req = <&gpe6 1 0x00>;
+			ssp-mcu-resp = <&gpi1 5 0x00>;
+			ssp-batch-wake-irq = <&gpa3 1 0x00>;
+			ssp-acc-position = <7>;
+			ssp-mag-position = <4>;
+			ssp-sns-combination = <0>;
+			ssp,prox-hi_thresh = <2000>;
+			ssp,prox-low_thresh = <1400>;
+			ssp-ap-rev = <1>;
+			ssp-mag-array = <9787 662 79 290 9460 27 200 (-33) 10632>;
+			ssp-glass-type = <0>;
+
+			controller-data {
+				cs-gpio = <&gpe2 6 0>;
+				samsung,spi-feedback-delay = <0>;
+			};
+		};
+	};
+
+	gps {
+		compatible = "samsung,exynos54xx-bcm4753";
+
+		pinctrl-names = "hub_en";
+		pinctrl-0 = <&ssp_gps_pwr_en>;
+
+		gpios = <&gpf0 3 0x0>;
+		status = "okay";
+	};
+	
+	panel_0: panel_drv@001 {
+		ddi_info = <&s6e3hf4>;
+	};
+
+	hsi2c_23: hsi2c@108E0000 {
+		touchscreen@49 {
+			status = "disable";
+		};
+	};
+
+	hsi2c_23: hsi2c@108E0000 {
+		status = "okay";
+		samsung,reset-before-trans;
+		samsung,stop-after-trans; /* for lsi ic */
+		touchscreen@48 {
+			compatible = "sec,sec_ts";
+			reg = <0x48>;
+			pinctrl-names = "on_state", "off_state";
+			pinctrl-0 = <&attn_irq>;
+			pinctrl-1 = <&attn_input>;
+			sec,irq_gpio = <&gpa1 0 0>;
+			sec,irq_type = <8200>;
+			sec,num_lines = <28 16>;        /* rx tx */
+			sec,max_coords = <4095 4095>;   /* x y */
+			sec,grip_area = <512>;
+			sec,regulator_dvdd = "tsp_io";
+			sec,regulator_avdd = "tsp_avdd";
+			sec,project_name = "hero2", "exynos8895";
+			sec,firmware_name = "tsp_sec/hero2la.bin";
+		};
+	};
+
+	pinctrl@164B0000 {
+		max77854_irq: max77854-irq {
+			samsung,pins = "gpa1-6";
+			samsung,pin-function = <0xf>;
+			samsung,pin-pud = <0>;
+			samsung,pin-drv = <0>;
+		};
+	};
+
+	hsi2c@10970000 {
+		status = "okay";
+
+		max77854@66 {
+			compatible = "maxim,max77854";
+			pinctrl-names = "default";
+			pinctrl-0 = <&max77854_irq &pwm_tout1>;
+			reg = <0x66>;
+			max77854,irq-gpio = <&gpa1 6 1>;
+			muic-universal,irq-gpio = <&gpa1 6 1>;
+			muic-universal,chip_name = "max,max77854";
+			max77854,wakeup;
+			muic,undefined_range;
+
+			regulators {
+				ESAFEOUT1 {
+					regulator-compatible = "safeout1";
+					regulator-name = "safeout1_range";
+					regulator-min-microvolt = <3300000>;
+					regulator-max-microvolt = <4900000>;
+					regulator-boot-on;
+				};
+
+				ESAFEOUT2 {
+					regulator-compatible = "safeout2";
+					regulator-name = "safeout2_range";
+					regulator-min-microvolt = <3300000>;
+					regulator-max-microvolt = <4900000>;
+				};
+			};
+		};
+	};
+
+	sound {
+		mixer-paths = "mixer_paths_r00.xml";
+	};
+};
